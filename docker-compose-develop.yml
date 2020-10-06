@@ -1,0 +1,42 @@
+version: "3"
+services:
+  develop:
+    build: .
+    ports:
+      - "9000:9000"
+    container_name: control-tower
+    env_file:
+      - dev.env
+    command: develop
+    depends_on:
+      - mongo
+      - redis
+    volumes:
+#      - ./app:/opt/control-tower/app
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # varnish:
+  #    image: zazukoians/varnish
+  #    container_name: control-tower-varnish
+  #    ports:
+  #      - "80:80"
+  #    restart: always
+  #   links:
+  #     - develop
+  #   volumes:
+  #     - ./varnish/default.vcl:/etc/varnish/default.vcl
+
+  mongo:
+    image: mongo:3.6.13
+    container_name: control-tower-mongo
+    ports:
+      - "27017"
+    volumes:
+      - $HOME/docker/control-tower/mongodb:/data/db
+    restart: always
+  redis:
+    image: redis
+    container_name: control-tower-redis
+    ports:
+      - "16379:6379"
+    restart: always
