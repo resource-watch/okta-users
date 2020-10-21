@@ -8,7 +8,6 @@ const UnprocessableEntityError = require('./errors/unprocessableEntity.error');
 const UnauthorizedError = require('./errors/unauthorized.error');
 const UserTempSerializer = require('./serializers/user-temp.serializer');
 const UserSerializer = require('./serializers/user.serializer');
-const OktaService = require('./services/oktaService');
 
 const serializeObjToQuery = (obj) => Object.keys(obj).reduce((a, k) => {
     a.push(`${k}=${encodeURIComponent(obj[k])}`);
@@ -705,38 +704,6 @@ module.exports = (plugin, connection, generalConfig) => {
 
         }
 
-        async function getUsersOKTA(ctx) {
-            logger.info('Get Users OKTA');
-            const oktaService = new OktaService();
-            ctx.body = await oktaService.getUserList();
-
-            // const user = getUser(ctx);
-            // if (!user.extraUserData || !user.extraUserData.apps) {
-            //     ctx.throw(403, 'Not authorized');
-            //     return;
-            // }
-
-            // const { query } = ctx;
-            // const clonedQuery = { ...query };
-            // delete clonedQuery['page[size]'];
-            // delete clonedQuery['page[number]'];
-            // delete clonedQuery.ids;
-            // delete clonedQuery.loggedUser;
-            // const serializedQuery = serializeObjToQuery(clonedQuery) ? `?${serializeObjToQuery(clonedQuery)}&` : '?';
-            // const link = `${ctx.request.protocol}://${ctx.request.host}${ctx.request.path}${serializedQuery}`;
-
-            // let users;
-            //
-            // if (query.app === 'all') {
-            //     users = await AuthService.getUsers(null, omit(query, ['app']));
-            // } else if (query.app) {
-            //     users = await AuthService.getUsers(query.app.split(','), omit(query, ['app']));
-            // } else {
-            //     users = await AuthService.getUsers(apps, query);
-            // }
-            //
-        }
-
         return {
             twitter,
             twitterCallback,
@@ -753,7 +720,6 @@ module.exports = (plugin, connection, generalConfig) => {
             logout,
             generateJWT,
             getUsers,
-            getUsersOKTA,
             getCurrentUser,
             getUserById,
             findByIds,
@@ -937,8 +903,6 @@ module.exports = (plugin, connection, generalConfig) => {
     ApiRouter.patch('/user/me', isLogged, API.updateMe);
     ApiRouter.patch('/user/:id', isLogged, isAdmin, API.updateUser);
     ApiRouter.delete('/user/:id', isLogged, isAdmin, API.deleteUser);
-
-    ApiRouter.get('/user-okta', isLogged, isAdmin, API.getUsersOKTA);
 
     return ApiRouter;
 };
