@@ -1,4 +1,5 @@
 /* eslint-disable no-underscore-dangle */
+const axios = require('axios');
 const logger = require('logger');
 const Router = require('koa-router');
 const passport = require('koa-passport');
@@ -95,35 +96,57 @@ module.exports = (plugin, connection, generalConfig) => {
             })(ctx, next);
         };
 
-        const localCallback = async (ctx) => passport.authenticate('local', async (user) => {
-            if (!user) {
-                if (ctx.request.type === 'application/json') {
-                    ctx.status = 401;
-                    ctx.body = {
+        const localCallback = async (ctx) => {
+            const onFailedLogin = (context) => {
+                if (context.request.type === 'application/json') {
+                    context.status = 401;
+                    context.body = {
                         errors: [{
                             status: 401,
-                            detail: 'Invalid email or password'
-                        }]
+                            detail: 'Invalid email or password',
+                        }],
                     };
                     return;
                 }
 
-                ctx.redirect('/auth/fail?error=true');
-                return;
-            }
+                context.redirect('/auth/fail?error=true');
+            };
 
-            if (ctx.request.type === 'application/json') {
-                ctx.status = 200;
-                logger.info('Generating token');
-                const token = await AuthService.createToken(user, false);
-                ctx.body = UserTempSerializer.serialize(user);
-                ctx.body.data.token = token;
-            } else {
-                await ctx.logIn(user)
-                    .then(() => ctx.redirect('/auth/success'))
-                    .catch(() => ctx.redirect('/auth/fail?error=true'));
+            // Call Okta API
+            try {
+                const res = await axios.post('https://dev-859268.okta.com/api/v1/authn', {
+                    username: ctx.request.body.email,
+                    password: ctx.request.body.password,
+                });
+
+                if (res && res.data && res.data.status && res.data.status === 'SUCCESS') {
+                    // Okta login successful
+                    const { user } = res.data._embedded;
+                    if (!user) {
+                        onFailedLogin(ctx);
+                    }
+
+                    if (ctx.request.type === 'application/json') {
+                        ctx.status = 200;
+                        logger.info('Generating token');
+                        const token = await AuthService.createToken(user, false);
+                        ctx.body = UserTempSerializer.serialize(user);
+                        ctx.body.data.token = token;
+                    } else {
+                        await ctx.logIn(user)
+                            .then(() => ctx.redirect('/auth/success'))
+                            .catch(() => ctx.redirect('/auth/fail?error=true'));
+                    }
+
+                } else {
+                    // Okta login failed
+                    onFailedLogin(ctx);
+                }
+            } catch (err) {
+                console.log('Something failed.');
+                onFailedLogin(ctx);
             }
-        })(ctx);
+        };
 
         async function createToken(ctx, saveInUser) {
             logger.info('Generating token');
