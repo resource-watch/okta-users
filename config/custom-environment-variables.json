@@ -24,5 +24,8 @@
   },
   "jwt": {
     "token": "JWT_SECRET"
+  },
+  "okta": {
+    "serverUrl": "OKTA_SERVER_URL"
   }
 }

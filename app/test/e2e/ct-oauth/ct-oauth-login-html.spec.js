@@ -5,6 +5,7 @@ const UserModel = require('plugins/sd-ct-oauth-plugin/models/user.model');
 
 const { createUserAndToken } = require('../utils/helpers');
 const { getTestAgent, closeTestAgent } = require('./../test-server');
+const OktaMocks = require('./helpers/okta.mock');
 
 chai.should();
 
@@ -86,6 +87,8 @@ describe('Auth endpoints tests - HTML', () => {
     });
 
     it('Logging in at /auth/login with no credentials should display the error messages', async () => {
+        OktaMocks.mockOktaLoginFailure();
+
         const response = await requester
             .post(`/auth/login`)
             .type('form')
@@ -96,6 +99,8 @@ describe('Auth endpoints tests - HTML', () => {
     });
 
     it('Logging in at /auth/login with email and no password should display the error messages', async () => {
+        OktaMocks.mockOktaLoginFailure();
+
         const response = await requester
             .post(`/auth/login`)
             .type('form')
@@ -110,6 +115,8 @@ describe('Auth endpoints tests - HTML', () => {
     });
 
     it('Logging in at /auth/login with invalid credentials (account does not exist) should display the error messages', async () => {
+        OktaMocks.mockOktaLoginFailure();
+
         const response = await requester
             .post(`/auth/login`)
             .type('form')
@@ -125,19 +132,7 @@ describe('Auth endpoints tests - HTML', () => {
     });
 
     it('Logging in at /auth/login valid credentials should redirect to the success page', async () => {
-        await new UserModel({
-            __v: 0,
-            email: 'test@example.com',
-            password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',
-            salt: '$2b$10$1wDgP5YCStyvZndwDu2Gwu',
-            extraUserData: {
-                apps: []
-            },
-            _id: '5becfa2b67da0d3ec07a27f6',
-            createdAt: '2018-11-15T04:46:35.313Z',
-            role: 'USER',
-            provider: 'local'
-        }).save();
+        OktaMocks.mockOktaLoginSuccess();
 
         const response = await requester
             .post(`/auth/login`)
@@ -160,9 +155,7 @@ describe('Auth endpoints tests - HTML', () => {
             salt: '$2b$10$1wDgP5YCStyvZndwDu2Gwu'
         });
 
-        nock('https://www.wikipedia.org')
-            .get('/')
-            .reply(200, 'ok');
+        nock('https://www.wikipedia.org').get('/').reply(200, 'ok');
 
         const responseOne = await requester
             .get(`/auth/login?callbackUrl=https://www.wikipedia.org`)
@@ -172,14 +165,14 @@ describe('Auth endpoints tests - HTML', () => {
         responseOne.should.redirect;
         responseOne.should.redirectTo(new RegExp(`/auth/success$`));
 
-        const responseTwo = await requester
-            .get('/auth/success');
-
+        const responseTwo = await requester.get('/auth/success');
         responseTwo.should.redirect;
         responseTwo.should.redirectTo('https://www.wikipedia.org/');
     });
 
     it('Logging in successfully with /auth/login with callbackUrl should redirect to the callback page', async () => {
+        OktaMocks.mockOktaLoginSuccess();
+
         await createUserAndToken({
             email: 'test@example.com',
             role: 'ADMIN',
@@ -214,6 +207,8 @@ describe('Auth endpoints tests - HTML', () => {
     });
 
     it('Logging in successfully with /auth/login with an updated callbackUrl should redirect to the new callback page', async () => {
+        OktaMocks.mockOktaLoginSuccess();
+
         await createUserAndToken({
             email: 'test@example.com',
             role: 'ADMIN',
@@ -251,6 +246,8 @@ describe('Auth endpoints tests - HTML', () => {
     });
 
     it('Logging in successfully with /auth/login with callbackUrl and token=true should redirect to the callback page and pass the token', async () => {
+        OktaMocks.mockOktaLoginSuccess();
+
         await createUserAndToken({
             email: 'test@example.com',
             role: 'ADMIN',
@@ -275,6 +272,8 @@ describe('Auth endpoints tests - HTML', () => {
     });
 
     it('Log in failure with /auth/login in should redirect to the failure page - HTTP request', async () => {
+        OktaMocks.mockOktaLoginFailure();
+
         const response = await requester
             .post(`/auth/login?callbackUrl=https://www.wikipedia.org`)
             .type('form')

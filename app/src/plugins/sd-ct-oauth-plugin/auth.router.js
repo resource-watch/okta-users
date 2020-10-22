@@ -1,6 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 const axios = require('axios');
 const logger = require('logger');
+const config = require('config');
 const Router = require('koa-router');
 const passport = require('koa-passport');
 const { cloneDeep, omit } = require('lodash');
@@ -114,7 +115,7 @@ module.exports = (plugin, connection, generalConfig) => {
 
             // Call Okta API
             try {
-                const res = await axios.post('https://dev-859268.okta.com/api/v1/authn', {
+                const res = await axios.post(`${config.get('okta.serverUrl')}/api/v1/authn`, {
                     username: ctx.request.body.email,
                     password: ctx.request.body.password,
                 });

@@ -71,7 +71,7 @@ function authService(plugin, connection) {
                 }
 
                 const userData = await UserModel.findById(user.id);
-                let token = null;
+                let token;
 
                 if (userData) {
                     const dataToken = {

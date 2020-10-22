@@ -6,6 +6,7 @@ const UserModel = require('plugins/sd-ct-oauth-plugin/models/user.model');
 
 const { getTestAgent, closeTestAgent } = require('./../test-server');
 const { createUserAndToken, createUserInDB } = require('../utils/helpers');
+const OktaMocks = require('./helpers/okta.mock');
 
 chai.should();
 
@@ -125,6 +126,8 @@ describe('Auth endpoints tests - JSON', () => {
     });
 
     it('Logging in at /auth/login with valid credentials should return a 200 HTTP code and the user details', async () => {
+        OktaMocks.mockOktaLoginSuccess();
+
         const user = await createUserInDB({
             email: 'test@example.com',
             password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',
@@ -165,6 +168,8 @@ describe('Auth endpoints tests - JSON', () => {
     });
 
     it('Logging in successfully with POST /auth/login with callbackUrl should not redirect to the callback page', async () => {
+        OktaMocks.mockOktaLoginSuccess();
+
         const user = await createUserInDB({
             email: 'test@example.com',
             password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',
